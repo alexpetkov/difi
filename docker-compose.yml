@@ -1,36 +1,6 @@
 version: '3.8'
 
 services:
-  # Core Services
-  api-init:
-    image: langgenius/dify-api:0.15.3
-    env_file:
-      - .env
-    environment:
-      - FLASK_APP=app:create_app
-      - PYTHONUNBUFFERED=1
-    entrypoint: [] # Override the default entrypoint
-    command: >
-      sh -c "
-        echo 'Starting initialization...' &&
-        cd /app/api &&
-        echo 'Changed to /app/api directory' &&
-        echo 'Installing dependencies...' &&
-        pip install -e . &&
-        echo 'Running flask db upgrade...' &&
-        flask db upgrade &&
-        echo 'Running flask init...' &&
-        flask init &&
-        echo 'Initialization complete!'
-      "
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - dify-network
-
   api:
     image: langgenius/dify-api:0.15.3
     restart: always
@@ -44,14 +14,8 @@ services:
       - FLASK_APP=app:create_app
     ports:
       - "5001:5001"
-    command: >
-      sh -c "
-        cd /app/api &&
-        gunicorn 'app:create_app()' --workers 1 --worker-class gevent --bind 0.0.0.0:5001 --timeout 300
-      "
+    command: gunicorn 'app:create_app()' --workers 1 --worker-class gevent --bind 0.0.0.0:5001 --timeout 300
     depends_on:
-      api-init:
-        condition: service_completed_successfully
       db:
         condition: service_healthy
       redis:
@@ -87,7 +51,6 @@ services:
     networks:
       - dify-network
 
-  # Dependencies
   db:
     image: postgres:15-alpine
     restart: always
