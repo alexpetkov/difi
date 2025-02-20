@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  # Core Services
+  api:
+    image: langgenius/dify-api:0.15.3
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+      - weaviate
+    networks:
+      - dify-network
+
+  worker:
+    image: langgenius/dify-api:0.15.3
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    networks:
+      - dify-network
+
+  web:
+    image: langgenius/dify-web:0.15.3
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - dify-network
+
+  # Dependencies
+  db:
+    image: postgres:15-alpine
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dify-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:6-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - dify-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  weaviate:
+    image: semitechnologies/weaviate:1.19.0
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    networks:
+      - dify-network
+
+  nginx:
+    image: nginx:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+      - web
+    networks:
+      - dify-network
+
+  sandbox:
+    image: langgenius/dify-sandbox:0.2.1
+    restart: always
+    networks:
+      - dify-network
+
+  ssrf_proxy:
+    image: ubuntu/squid:latest
+    restart: always
+    networks:
+      - dify-network
+      - ssrf_proxy_network
+
+networks:
+  dify-network:
+    driver: bridge
+  ssrf_proxy_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  weaviate_data:
