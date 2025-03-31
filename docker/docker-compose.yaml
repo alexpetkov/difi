@@ -562,6 +562,7 @@ services:
     volumes:
       - ./volumes/plugin_daemon:/app/storage
 
+
   # ssrf_proxy server
   # for more information, please refer to
   # https://docs.dify.ai/learn-more/faq/install-faq#id-18.-why-is-ssrf_proxy-needed
@@ -640,7 +641,7 @@ services:
       - api
       - web
     ports:
-      - '5001:80'
+      - '${EXPOSE_NGINX_PORT:-80}:${NGINX_PORT:-80}'
       - '${EXPOSE_NGINX_SSL_PORT:-443}:${NGINX_SSL_PORT:-443}'
 
   # The Weaviate vector store.

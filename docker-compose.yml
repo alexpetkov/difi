@@ -1,0 +1,18 @@
+nginx:
+  image: nginx:latest
+  restart: always
+  ports:
+    - '${EXPOSE_NGINX_PORT:-8080}:${NGINX_PORT:-8080}'
+    - '${EXPOSE_NGINX_SSL_PORT:-8443}:${NGINX_SSL_PORT:-8443}'
+  volumes:
+    - ./nginx/conf.d:/etc/nginx/conf.d:ro
+  depends_on:
+    - api
+    - web
+  networks:
+    - dify-network
+  environment:
+    NGINX_SERVER_NAME: ${NGINX_SERVER_NAME:-_}
+    NGINX_HTTPS_ENABLED: ${NGINX_HTTPS_ENABLED:-false}
+    NGINX_PORT: ${NGINX_PORT:-8080}
+    NGINX_SSL_PORT: ${NGINX_SSL_PORT:-8443}
